@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Access-Control-Allow-Origin" content="*" />
+    <title>Document</title>
+  </head>
+  <body>
+    <div>
+      <label for="appid">appid</label>
+      <input type="text" class="appid" id="appid" />
+
+      <label for="key">秘钥</label>
+      <input type="text" class="key" id="key" />
+
+      <label for="level">去重等级</label>
+      <select name="level" id="" class="level">
+        <option value="simple">简单</option>
+        <option value="middle">中等</option>
+        <option value="high">高级</option>
+      </select>
+
+      <a href="https://api.fanyi.baidu.com/api/trans/product/apichoose"
+        >获取百度通用翻译API</a
+      >
+    </div>
+    <hr />
+    <div>
+      <textarea name="" class="fromText" cols="50" rows="20"></textarea>
+      <button class="switchBtn">转换</button>
+      <textarea name="" class="toText" cols="50" rows="20"></textarea>
+    </div>
+
+    <br />
+    日志：
+    <textarea name="" class="log" cols="60" rows="10">
+请先到百度翻译开放平台注册账号、实名认证免费升级到高级版、申请通用翻译api、将appid和密钥粘贴到本工具
+如果出现闪退，请先自行检查
+1. 是否是个人账户
+2. 是否进行了高级认证
+3. 是否开通了通用翻译api
+4. 有没有限制ip解决不了请加入QQ群询问
+
+    </textarea>
+
+    <script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.6.0/jquery.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/blueimp-md5/2.18.0/js/md5.js"></script>
+    <script src="./script.js"></script>
+    <script>
+      var fromTextEle = $(".fromText"),
+        toTextELe = $(".toText"),
+        switchBtnEle = $(".switchBtn"),
+        appid = "20210323000739360",
+        key = "82GT5f3GpFEjNsNBPF1c";
+      /*
+初级	中->英->德->中
+中级	中->英->德->日->葡萄牙->中
+高级	中->英->德->日->葡萄牙->意大利->波兰->保加利亚->爱沙尼亚->中
+*/
+      var transList = {
+        simple: ["zh en", "en de", "de zh"],
+        middle: ["zh en", "en de", "de jp", "jp pt", "pt zh"],
+        high: [
+          "zh en",
+          "en de",
+          "de jp",
+          "jp pt",
+          "pt it",
+          "it pl",
+          "pl bul",
+          "bul est",
+          "est zh",
+        ],
+      };
+
+      var mode = "simple";
+
+      // 生成API参数
+      function genParams(q, from, to) {
+        var url = "http://api.fanyi.baidu.com/api/trans/vip/translate";
+        var data = {
+          q: q,
+          from: from,
+          to: to,
+          appid: appid,
+          salt: "",
+          sign: "",
+        };
+
+        data.salt = Math.floor(Math.random() * 10000000000);
+        data.sign = md5(appid + q + data.salt + key);
+
+        return { url, data };
+      }
+
+      // 翻译
+      function translate(q, from, to) {
+        var params = genParams(q, from, to);
+
+        return new Promise((resolve, reject) => {
+          $.ajax({
+            type: "POST",
+            url: params.url,
+            data: params.data,
+            dataType: "jsonp",
+            headers: {
+              "Content-Type": "application/x-www-form-urlencoded",
+            },
+            success: (res) => {
+              log("from: " + from, "; ", "to:" + to);
+              resolve(res);
+            },
+            error: () => {
+              reject();
+            },
+          });
+        });
+      }
+
+      // 翻译队列
+      function queen(str) {
+        var dst = str;
+        (async () => {
+          for (let i = 0; i < transList[mode].length; i++) {
+            var lang = transList[mode][i].split(" ");
+            res = await translate(dst, lang[0], lang[1]);
+            dst = res.trans_result[0].dst;
+            log("result", dst);
+          }
+          toTextELe.text(dst);
+        })();
+      }
+
+      // 开始翻译
+      function starSwitch() {
+        appid = $(".appid").val();
+        key = $(".key").val();
+        if (fromTextEle.val() === "" || appid === "" || key === "") {
+          return false;
+        }
+
+        mode = $(".level option:selected").val();
+
+        queen(fromTextEle.val());
+      }
+
+      // 日志
+      function log(...params) {
+        var insertStr = params.join("");
+        logEle = $(".log");
+        logEle.text(logEle.text() + insertStr + "\n");
+      }
+
+      $(".switchBtn").click(starSwitch);
+    </script>
+  </body>
+</html>
