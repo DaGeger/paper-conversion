@@ -22,13 +22,21 @@
         <option value="high">高级</option>
       </select>
 
-      <a href="https://api.fanyi.baidu.com/api/trans/product/apichoose"
+      <a
+        target="_blank"
+        href="https://api.fanyi.baidu.com/api/trans/product/apichoose"
         >获取百度通用翻译API</a
       >
     </div>
     <hr />
     <div>
-      <textarea name="" class="fromText" cols="50" rows="20"></textarea>
+      <textarea
+        name=""
+        class="fromText"
+        cols="50"
+        rows="20"
+        placeholder="输入要转换的文本"
+      ></textarea>
       <button class="switchBtn">转换</button>
       <textarea name="" class="toText" cols="50" rows="20"></textarea>
     </div>
@@ -41,24 +49,26 @@
 1. 是否是个人账户
 2. 是否进行了高级认证
 3. 是否开通了通用翻译api
-4. 有没有限制ip解决不了请加入QQ群询问
 
     </textarea>
 
     <script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.6.0/jquery.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/blueimp-md5/2.18.0/js/md5.js"></script>
-    <script src="./script.js"></script>
     <script>
       var fromTextEle = $(".fromText"),
         toTextELe = $(".toText"),
         switchBtnEle = $(".switchBtn"),
-        appid = "20210323000739360",
-        key = "82GT5f3GpFEjNsNBPF1c";
+        appid = "20210323000739360", // 设置默认appid
+        key = "82GT5f3GpFEjNsNBPF1c"; // 设置默认key
+
+      // 关于appid和key信息，强烈建议同学们自行免费申请，避免卡顿
+      // 申请地址: https://api.fanyi.baidu.com/api/trans/product/apichoose
+
       /*
-初级	中->英->德->中
-中级	中->英->德->日->葡萄牙->中
-高级	中->英->德->日->葡萄牙->意大利->波兰->保加利亚->爱沙尼亚->中
-*/
+      初级	中->英->德->中
+      中级	中->英->德->日->葡萄牙->中
+      高级	中->英->德->日->葡萄牙->意大利->波兰->保加利亚->爱沙尼亚->中
+      */
       var transList = {
         simple: ["zh en", "en de", "de zh"],
         middle: ["zh en", "en de", "de jp", "jp pt", "pt zh"],
@@ -79,7 +89,7 @@
 
       // 生成API参数
       function genParams(q, from, to) {
-        var url = "http://api.fanyi.baidu.com/api/trans/vip/translate";
+        var url = "https://fanyi-api.baidu.com/api/trans/vip/translate";
         var data = {
           q: q,
           from: from,
@@ -127,7 +137,7 @@
             var lang = transList[mode][i].split(" ");
             res = await translate(dst, lang[0], lang[1]);
             dst = res.trans_result[0].dst;
-            log("result", dst);
+            log("result: ", dst);
           }
           toTextELe.text(dst);
         })();
@@ -138,10 +148,13 @@
         appid = $(".appid").val();
         key = $(".key").val();
         if (fromTextEle.val() === "" || appid === "" || key === "") {
+          log("请将appid key和要翻译的文本补充完整");
           return false;
         }
 
         mode = $(".level option:selected").val();
+
+        setCacheData();
 
         queen(fromTextEle.val());
       }
@@ -150,10 +163,31 @@
       function log(...params) {
         var insertStr = params.join("");
         logEle = $(".log");
-        logEle.text(logEle.text() + insertStr + "\n");
+        logEle.text(insertStr + "\n" + logEle.text());
       }
 
-      $(".switchBtn").click(starSwitch);
+      // 缓存appid和key
+      function setCacheData() {
+        localStorage.setItem("appid", $(".appid").val());
+        localStorage.setItem("key", $(".key").val());
+      }
+
+      // 读取缓存中的appid和key
+      function getCacheData() {
+        var appid = localStorage.getItem("appid");
+        var key = localStorage.getItem("key");
+        if (appid + key + $(".appid").val() + $(".key").val() !== "") {
+          $(".appid").val(appid);
+          $(".key").val(key);
+        }
+      }
+
+      function init() {
+        getCacheData();
+        $(".switchBtn").click(starSwitch);
+      }
+
+      init();
     </script>
   </body>
 </html>
